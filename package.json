@@ -10,8 +10,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "konva": "^10.7.0",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8"
+    "react-dom": "^19.2.8",
+    "react-konva": "19.2",
+    "zelda-hyrule-ui": "^0.4.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
