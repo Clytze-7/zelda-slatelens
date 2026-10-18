@@ -1,8 +1,9 @@
 .editor {
   display: grid;
   grid-template-columns: 300px minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
   gap: 24px;
-  min-height: 100vh;
+  height: 100dvh;
   padding: 24px;
 }
 
@@ -13,21 +14,38 @@
   background: #192a30;
 }
 
+.controls {
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+}
+
 .preview {
   display: grid;
   place-items: center;
   min-width: 0;
-  min-height: 400px;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .status-buttons {
   display: flex;
+  width: 100%;
   gap: 8px;
   margin-top: 24px;
 }
 
 .status-buttons > button {
-  flex: 1;
+  flex: 1 1 0;
+  /** flex: 1 1 0: 让两个按钮平等分配父容器的可用宽度
+  flex-grow: 1; 有剩余空间时，允许按钮扩展
+  flex-shrink: 1; 空间不足时，允许按钮收缩
+  flex-basis: 0; 分配空间时，从0基础宽度开始计算 */
+  min-width: 0; /** auto时可能会阻止元素缩小到内容最小宽度以下 */
+  height: 42px;
+  padding: 0 6px;
+  font-size: 14px;
+  /* letter-spacing: 0; */
 }
 
 .status-buttons .status-unrecorded-active {
@@ -142,11 +160,24 @@
 
 @media (max-width: 720px) {
   .editor {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    min-height: 100dvh;
     grid-template-columns: 1fr;
     padding: 12px;
   }
 
+  .controls {
+    overflow: visible;
+  }
+
   .preview {
+    height: min(65dvh, 520px);
     min-height: 300px;
   }
+}
+
+.export-control {
+  margin-top: 32px;
 }

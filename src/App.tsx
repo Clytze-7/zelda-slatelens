@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react'
 import { Button, SheikahTextTitle } from 'zelda-hyrule-ui'
 import { Stage, Layer, Image as KonvaImage, Line, Group, Rect, Text } from 'react-konva'
+import type Konva from 'konva'
 import './App.css'
 import { colors } from './theme'
 
@@ -9,7 +10,7 @@ function App() {
   const [image, setImage] = useState<HTMLImageElement | null>(null)
   const previewRef = useRef<HTMLElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const [previewWidth, setPreviewWidth] = useState(0)
+  const [previewSize, setPreviewSize] = useState({ width: 0, height: 0 })
 
   const [recorded, setRecorded] = useState(false)
   // 追踪框的位置以画布宽高的比例保存，窗口缩放后仍指向图片的同一区域。
@@ -17,6 +18,8 @@ function App() {
   const [boxPercent, setBoxPercent] = useState(28)
   const [fileName, setFileName] = useState('')
   const [targetName, setTargetName] = useState('Unknown')
+
+  const stageRef = useRef<Konva.Stage>(null)
 
 
   // 容器宽度变化时更新画布；取整可避免小数像素触发反复重绘。
@@ -26,18 +29,27 @@ function App() {
 
     const observer = new ResizeObserver(([entry]) => {
       const width = Math.floor(entry.contentRect.width)
-      setPreviewWidth((previous) => previous === width ? previous : width)
+      const height = Math.floor(entry.contentRect.height)
+      setPreviewSize((previous) =>
+        previous.width === width  && previous.height === height
+        ? previous
+        : { width, height })
     })
 
     observer.observe(element)
     return () => observer.disconnect()
   }, [])
 
-  // 画布宽度跟随容器，高度按原图宽高比计算，避免图片被拉伸。
-  const canvasWidth = image ? previewWidth : 0
-  const canvasHeight = image
-    ? canvasWidth * image.naturalHeight / image.naturalWidth
+  // 取宽、高两个方向允许的较小缩放比例；1 表示不放大原图。
+  const previewScale = image
+    ? Math.min(
+        previewSize.width / image.naturalWidth,
+        previewSize.height / image.naturalHeight,
+        1,
+      )
     : 0
+  const canvasWidth = image ? image.naturalWidth * previewScale : 0
+  const canvasHeight = image ? image.naturalHeight * previewScale : 0
   // 按短边计算装饰尺寸，让横图和竖图的取景框视觉比例接近。
   const shortEdge = Math.min(canvasWidth, canvasHeight)
   const inset = shortEdge * 0.06 // 固定框距图片边缘的距离
@@ -46,10 +58,17 @@ function App() {
   // 滑块值表示追踪框占图片短边的百分比。
   const boxSize = shortEdge * boxPercent / 100
 
-  // 提示条至少 140px 宽，但不能超过画布；追踪框和提示条共用中心点。
-  const labelWidth = Math.min(canvasWidth, Math.max(boxSize, 140))
-  const labelHeight = 26
-  const labelGap = 6
+  // 装饰尺寸随预览画布缩放，导出到原图尺寸后保持相同的视觉比例。
+  // 以画布短边 600px 时的原有尺寸作为基准。
+  const overlayScale = shortEdge / 600
+  const lineWidth = 2 * overlayScale
+  const labelBorderWidth = overlayScale
+
+  // 提示条最小宽度随画布缩放，但不能超过画布；追踪框和提示条共用中心点。
+  const labelWidth = Math.min(canvasWidth, Math.max(boxSize, 140 * overlayScale))
+  const labelHeight = 26 * overlayScale
+  const labelGap = 6 * overlayScale
+  const labelFontSize = 14 * overlayScale
   const horizontalHalf = Math.max(boxSize, labelWidth) / 2
 
   // 将比例坐标换算成画布像素，并限制在可见区域内。
@@ -82,6 +101,33 @@ function App() {
     reader.readAsDataURL(file)
   }
 
+  function handleExport() {
+    if (!image || !canvasWidth || !stageRef.current) return
+
+    // 当前画布按窗口缩小显示；导出时放大回原图像素宽度
+    const pixelRatio = image.naturalWidth / canvasWidth
+    const canvas = stageRef.current.toCanvas({ pixelRatio })
+
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        window.alert('Exported failed')
+        return
+      }
+
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      const exportName = (targetName.trim() || 'Unknown').replace(/[\\/:*?"<>|]/g, '_')
+      const today = new Date()
+      const date = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}`
+      link.href = url
+      link.download = `${exportName}-${date}.png`
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.setTimeout(() => URL.revokeObjectURL(url), 60_000)
+    }, 'image/png')
+  }
+
   return (
     <main className="editor">
       <section className="controls">
@@ -90,12 +136,14 @@ function App() {
         {/* 记录状态决定追踪框与识别提示的颜色。 */}
         <div className="status-buttons" role="group" aria-label="图鉴状态">
           <Button
+            size="small"
             variant={recorded ? 'ghost' : 'primary'}
             className={!recorded ? 'status-unrecorded-active' : undefined}
             aria-pressed={!recorded}
             onClick={() => setRecorded(false)}
           >Unrecorded</Button>
           <Button
+            size="small"
             variant={recorded ? 'sheikah' : 'ghost'}
             className={recorded ? 'status-recorded-active' : undefined}
             aria-pressed={recorded}
@@ -115,6 +163,7 @@ function App() {
           />
 
           <Button
+            size="small"
             variant="sheikah"
             block
             onClick={() => fileInputRef.current?.click()}
@@ -153,18 +202,23 @@ function App() {
             onChange={(event) => setBoxPercent(Number(event.target.value))}
           />
         </div>
+        <div className="export-control">
+          <Button size="small" variant="sheikah" block disabled={!image} onClick={handleExport}>
+            Export PNG
+          </Button>
+        </div>
       </section>
 
       <section className="preview" ref={previewRef}>
         { image && canvasWidth > 0 ? (
-          <Stage width={canvasWidth} height={canvasHeight}>
+          <Stage ref={stageRef} width={canvasWidth} height={canvasHeight}>
             <Layer>
               {/* 图层顺序：原图 → 固定取景框 → 可拖动追踪框与名称提示。 */}
               <KonvaImage image={image} width={canvasWidth} height={canvasHeight} />
-              <Line points={[inset + arm, inset, inset, inset, inset, inset + arm]} stroke={colors.sheikah} strokeWidth={2} />
-              <Line points={[canvasWidth - inset - arm, inset, canvasWidth - inset, inset, canvasWidth - inset, inset + arm]} stroke={colors.sheikah} strokeWidth={2} />
-              <Line points={[inset + arm, canvasHeight - inset, inset, canvasHeight - inset, inset, canvasHeight - inset - arm]} stroke={colors.sheikah} strokeWidth={2} />
-              <Line points={[canvasWidth - inset - arm, canvasHeight - inset, canvasWidth - inset, canvasHeight - inset, canvasWidth - inset, canvasHeight - inset - arm]} stroke={colors.sheikah} strokeWidth={2} />
+              <Line points={[inset + arm, inset, inset, inset, inset, inset + arm]} stroke={colors.sheikah} strokeWidth={lineWidth} />
+              <Line points={[canvasWidth - inset - arm, inset, canvasWidth - inset, inset, canvasWidth - inset, inset + arm]} stroke={colors.sheikah} strokeWidth={lineWidth} />
+              <Line points={[inset + arm, canvasHeight - inset, inset, canvasHeight - inset, inset, canvasHeight - inset - arm]} stroke={colors.sheikah} strokeWidth={lineWidth} />
+              <Line points={[canvasWidth - inset - arm, canvasHeight - inset, canvasWidth - inset, canvasHeight - inset, canvasWidth - inset, canvasHeight - inset - arm]} stroke={colors.sheikah} strokeWidth={lineWidth} />
               {/* Group 内的元素一起拖动；边界同时考虑追踪框和上方提示条。 */}
               <Group
                 x={targetX}
@@ -196,7 +250,7 @@ function App() {
                   height={labelHeight}
                   fill="rgba(10, 20, 40, 0.75)"
                   stroke={trackingColor}
-                  strokeWidth={1}
+                  strokeWidth={labelBorderWidth}
                 />
                 <Text
                   x={-labelWidth / 2}
@@ -206,7 +260,7 @@ function App() {
                   text={targetName.trim() || 'Unknown'}
                   align="center"
                   verticalAlign="middle"
-                  fontSize={14}
+                  fontSize={labelFontSize}
                   fill={trackingColor}
                   ellipsis
                   wrap="none"
@@ -217,7 +271,7 @@ function App() {
                   width={boxSize}
                   height={boxSize}
                   stroke={trackingColor}
-                  strokeWidth={2}
+                  strokeWidth={lineWidth}
                   fill="rgba(0, 0, 0, 0.08)"
                 />
               </Group>
