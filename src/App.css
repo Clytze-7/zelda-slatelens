@@ -15,9 +15,25 @@
 }
 
 .controls {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
   min-height: 0;
+  padding: 16px;
+  overflow: hidden;
+}
+
+.settings-page {
+  flex: 1;
+  min-height: 0;
+  /* 给焦点描边留出 6px，负边距让控件仍与侧栏内容对齐。 */
+  margin: 10px -6px 0;
+  padding: 6px;
   overflow-y: auto;
+}
+
+.control-group + .control-group {
+  margin-top: 16px;
 }
 
 .preview {
@@ -32,7 +48,6 @@
   display: flex;
   width: 100%;
   gap: 8px;
-  margin-top: 24px;
 }
 
 .status-buttons > button {
@@ -62,10 +77,6 @@
   background: #3cd3fc20;
 }
 
-.upload-control {
-  margin-top: 32px;
-}
-
 .control-label,
 .name-control label,
 .size-control label {
@@ -78,16 +89,14 @@
   margin-bottom: 10px;
 }
 
-.file-name {
+.control-hint {
   display: block;
-  margin-top: 10px;
+  margin-top: 8px;
   color: #e2ded399;
-  overflow-wrap: anywhere;
 }
 
-.name-control,
-.size-control {
-  margin-top: 24px;
+.file-name {
+  overflow-wrap: anywhere;
 }
 
 .name-control label {
@@ -168,8 +177,13 @@
     padding: 12px;
   }
 
-  .controls {
+  .controls,
+  .settings-page {
     overflow: visible;
+  }
+
+  .settings-page {
+    flex: none;
   }
 
   .preview {
@@ -178,6 +192,56 @@
   }
 }
 
+.settings-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: none;
+  margin-top: 12px;
+}
+
+.pager-arrow {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+}
+
+.pager-current {
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+  color: #e2ded3;
+  font-size: 12px;
+}
+
 .export-control {
-  margin-top: 32px;
+  flex: none;
+  margin-top: 12px;
+}
+
+.compression-toggle {
+  display: block;
+  width: 100%;
+  height: auto;
+  padding: 0;
+  background: transparent;
+}
+
+.compression-toggle > span {
+  display: block;
+  margin-bottom: 10px;
+  padding: 0;
+  color: #e2ded3;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 400;
+}
+
+.compression-toggle > div:last-child {
+  width: 100%;
+  max-width: 100%;
+}
+
+.compression-toggle button {
+  font-size: 14px;
 }

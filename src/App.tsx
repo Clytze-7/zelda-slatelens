@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react'
-import { Button, SheikahTextTitle } from 'zelda-hyrule-ui'
+import { Button, DirectionalArrow, Pagination, SettingsToggle, SheikahTextTitle } from 'zelda-hyrule-ui'
 import { Stage, Layer, Image as KonvaImage, Line, Group, Rect, Text } from 'react-konva'
 import type Konva from 'konva'
 import './App.css'
 import { colors } from './theme'
+
+const SETTINGS_PAGES = ['Basic']
 
 function App() {
   // 图片只保存在浏览器内存中；两个 ref 分别指向预览容器和隐藏的文件输入框。
@@ -18,6 +20,8 @@ function App() {
   const [boxPercent, setBoxPercent] = useState(28)
   const [fileName, setFileName] = useState('')
   const [targetName, setTargetName] = useState('Unknown')
+  const [compressedExport, setCompressedExport] = useState(false)
+  const [settingsPage, setSettingsPage] = useState(0)
 
   const stageRef = useRef<Konva.Stage>(null)
 
@@ -104,9 +108,15 @@ function App() {
   function handleExport() {
     if (!image || !canvasWidth || !stageRef.current) return
 
+    const sourceLongEdge = Math.max(image.naturalWidth, image.naturalHeight)
+    const outputScale = compressedExport
+      ? Math.min(1, 2560 / sourceLongEdge)
+      : 1
     // 当前画布按窗口缩小显示；导出时放大回原图像素宽度
-    const pixelRatio = image.naturalWidth / canvasWidth
+    const pixelRatio = (image.naturalWidth / canvasWidth) * outputScale
     const canvas = stageRef.current.toCanvas({ pixelRatio })
+    const mimeType = compressedExport ? 'image/jpeg' : 'image/png'
+    const extension = compressedExport ? 'jpg' : 'png'
 
     canvas.toBlob((blob) => {
       if (!blob) {
@@ -120,91 +130,134 @@ function App() {
       const today = new Date()
       const date = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}`
       link.href = url
-      link.download = `${exportName}-${date}.png`
+      link.download = `${exportName}-${date}.${extension}`
       document.body.appendChild(link)
       link.click()
       link.remove()
       window.setTimeout(() => URL.revokeObjectURL(url), 60_000)
-    }, 'image/png')
+    }, mimeType, compressedExport ? 0.88 : undefined)
   }
 
   return (
     <main className="editor">
       <section className="controls">
-        <SheikahTextTitle title="SlateLens" description="Add Sheikah-style camera frame for the picture"  />
+        <SheikahTextTitle title="SlateLens" description="Sheikah camera frame editor"  />
 
-        {/* 记录状态决定追踪框与识别提示的颜色。 */}
-        <div className="status-buttons" role="group" aria-label="图鉴状态">
-          <Button
-            size="small"
-            variant={recorded ? 'ghost' : 'primary'}
-            className={!recorded ? 'status-unrecorded-active' : undefined}
-            aria-pressed={!recorded}
-            onClick={() => setRecorded(false)}
-          >Unrecorded</Button>
-          <Button
-            size="small"
-            variant={recorded ? 'sheikah' : 'ghost'}
-            className={recorded ? 'status-recorded-active' : undefined}
-            aria-pressed={recorded}
-            onClick={() => setRecorded(true)}
-          >Recorded</Button>
-        </div>
-        {/* UI 库按钮触发隐藏的原生文件输入框。 */}
-        <div className="upload-control">
-          <span className="control-label">Choose a picture</span>
+        <div className="settings-page">
+          {settingsPage === 0 && (
+            <>
+              {/* 记录状态决定追踪框与识别提示的颜色。 */}
+              <div className="control-group status-buttons" role="group" aria-label="图鉴状态">
+                <Button
+                  size="small"
+                  variant={recorded ? 'ghost' : 'primary'}
+                  className={!recorded ? 'status-unrecorded-active' : undefined}
+                  aria-pressed={!recorded}
+                  onClick={() => setRecorded(false)}
+                >Unrecorded</Button>
+                <Button
+                  size="small"
+                  variant={recorded ? 'sheikah' : 'ghost'}
+                  className={recorded ? 'status-recorded-active' : undefined}
+                  aria-pressed={recorded}
+                  onClick={() => setRecorded(true)}
+                >Recorded</Button>
+              </div>
+              {/* UI 库按钮触发隐藏的原生文件输入框。 */}
+              <div className="control-group upload-control">
+                <span className="control-label">Choose a picture</span>
 
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleUpload}
-            hidden
-          />
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleUpload}
+                  hidden
+                />
 
-          <Button
-            size="small"
-            variant="sheikah"
-            block
-            onClick={() => fileInputRef.current?.click()}
-          >
-            {image ? 'Change picture': 'Select picture'}
-          </Button>
+                <Button
+                  size="small"
+                  variant="sheikah"
+                  block
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {image ? 'Change picture': 'Select picture'}
+                </Button>
 
-          <small className="file-name">
-            {fileName || 'Your picture stays in this browser'}
-          </small>
+                <small className="control-hint file-name">{fileName || 'Your picture stays in this browser'}</small>
+              </div>
+              {/* 名称输入和大小滑块会立即反映在画布上。 */}
+              <div className="control-group name-control">
+                <label htmlFor="target-name">Target Name</label>
+                <input
+                  id="target-name"
+                  type="text"
+                  maxLength={24}
+                  value={targetName}
+                  onChange={(event) => setTargetName(event.target.value)}
+                  placeholder="Enter a name"
+                />
+              </div>
+              <div className="control-group size-control">
+                <label htmlFor="box-size">
+                  <span>Tracking frame size</span>
+                  <strong>{boxPercent}%</strong>
+                </label>
+                <input
+                  id="box-size"
+                  type="range"
+                  min="12"
+                  max="60"
+                  value={boxPercent}
+                  disabled={!image}
+                  onChange={(event) => setBoxPercent(Number(event.target.value))}
+                />
+              </div>
+              <div className="control-group compression-control">
+                <SettingsToggle
+                  className="compression-toggle"
+                  label="Compress export"
+                  options={['OFF', 'ON']}
+                  value={compressedExport ? 'ON' : 'OFF'}
+                  onChange={(value) => setCompressedExport(value === 'ON')}
+                />
+                <small className="control-hint">ON: JPG · long edge up to 2560px</small>
+              </div>
+            </>
+          )}
         </div>
-        {/* 名称输入和大小滑块会立即反映在画布上。 */}
-        <div className="name-control">
-          <label htmlFor="target-name">Target Name</label>
-          <input
-            id="target-name"
-            type="text"
-            maxLength={24}
-            value={targetName}
-            onChange={(event) => setTargetName(event.target.value)}
-            placeholder="Enter a name"
-          />
-        </div>
-        <div className="size-control">
-          <label htmlFor="box-size">
-            <span>Tracking frame size</span>
-            <strong>{boxPercent}%</strong>
-          </label>
-          <input
-            id="box-size"
-            type="range"
-            min="12"
-            max="60"
-            value={boxPercent}
-            disabled={!image}
-            onChange={(event) => setBoxPercent(Number(event.target.value))}
-          />
-        </div>
+        {SETTINGS_PAGES.length > 1 && (
+          <nav className="settings-pager" aria-label="Settings pages">
+            <Button
+              size="small"
+              variant="ghost"
+              className="pager-arrow"
+              aria-label="Previous settings page"
+              disabled={settingsPage === 0}
+              onClick={() => setSettingsPage((page) => Math.max(0, page - 1))}
+            >
+              <DirectionalArrow direction="left" size={18} />
+            </Button>
+            <div className="pager-current">
+              <span>{SETTINGS_PAGES[settingsPage]}</span>
+              <Pagination totalPages={SETTINGS_PAGES.length} currentPage={settingsPage + 1} />
+            </div>
+            <Button
+              size="small"
+              variant="ghost"
+              className="pager-arrow"
+              aria-label="Next settings page"
+              disabled={settingsPage === SETTINGS_PAGES.length - 1}
+              onClick={() => setSettingsPage((page) => Math.min(SETTINGS_PAGES.length - 1, page + 1))}
+            >
+              <DirectionalArrow direction="right" size={18} />
+            </Button>
+          </nav>
+        )}
+        {/* 导出按钮 */}
         <div className="export-control">
           <Button size="small" variant="sheikah" block disabled={!image} onClick={handleExport}>
-            Export PNG
+            {compressedExport ? 'Export JPG' : 'Export PNG'}
           </Button>
         </div>
       </section>
