@@ -2,6 +2,8 @@
 
 [简体中文](README.md) | [English](README.en.md)
 
+[Live demo](https://zelda-slatelens.vercel.app/)
+
 **Sheikah-style camera frame editor inspired by _The Legend of Zelda: Breath of the Wild_.**
 
 SlateLens is a frontend-only image editor. Choose a local picture and add a Sheikah-style viewfinder and recognition label. The project is currently a prototype.
