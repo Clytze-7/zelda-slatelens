@@ -6,6 +6,13 @@ html {
   scrollbar-gutter: stable;
 }
 
+.app-background {
+  min-height: 100dvh;
+  height: auto;
+  overflow: visible;
+  border-radius: 0;
+}
+
 body {
   margin: 0;
   font-family: system-ui, sans-serif;

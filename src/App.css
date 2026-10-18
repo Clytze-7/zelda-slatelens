@@ -11,7 +11,7 @@
 .preview {
   padding: 24px;
   border: 1px solid #49636a;
-  background: #192a30;
+  background: rgb(25 42 48 / 85%);
 }
 
 .controls {
@@ -42,6 +42,8 @@
   min-width: 0;
   min-height: 0;
   overflow: hidden;
+  /* 画布外保留更多背景纹理，图片本身仍保持原样。 */
+  background: rgb(25 42 48 / 68%);
 }
 
 .status-buttons {
