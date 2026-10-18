@@ -8,13 +8,13 @@ SlateLens is a frontend-only image editor. Choose a local picture and add a Shei
 
 ## Current features
 
-- Read and preview local images in the browser without uploading them to a server.
-- Display a fixed viewfinder that always uses Sheikah blue.
-- Drag a single tracking frame and adjust its size with a slider.
-- Enter a target name. The tracking frame is Sheikah blue when recorded and orange when unrecorded.
-- Use a basic responsive layout on desktop and mobile.
+- Choose and preview local images.
+- Export PNGs with the viewfinder at the original image dimensions.
+- Add a Sheikah-style viewfinder with recorded and unrecorded recognition styles.
+- Drag or resize the tracking frame and customize the target name.
+- Use a responsive layout on desktop and mobile.
 
-**Not yet implemented:** image export, compressed export, and cropping. The current preview cannot be saved as a finished image.
+**Not yet implemented:** compressed export and cropping.
 
 ## Run locally
 
