@@ -6,15 +6,21 @@
 
 SlateLens is a frontend-only image editor. Choose a local picture and add a Sheikah-style viewfinder and recognition label. The project is currently a prototype.
 
+## Example output
+
+<a href="docs/images/Long-tailed%20Shrike-20261017.jpg"><img src="docs/images/Long-tailed%20Shrike-20261017-preview.jpg" alt="SlateLens example output: Long-tailed Shrike" width="420"></a>
+
+Click the preview to view the full-size example.
+
 ## Current features
 
-- Choose and preview local images.
-- Export PNGs at the original image dimensions or compressed JPGs.
-- Add a Sheikah-style viewfinder with recorded and unrecorded recognition styles.
-- Drag or resize the tracking frame and customize the target name.
+- Choose, preview, and edit local images in the browser without uploading them to a server.
+- The fixed viewfinder stays Sheikah blue. Drag or resize the single tracking frame and customize its target name; the frame is blue when recorded and orange when unrecorded.
+- Export a PNG at the original image dimensions, or a compressed JPG with a maximum long edge of 2560 pixels. JPG uploads enable compressed export by default, and you can change the setting.
+- Export filenames use `Target Name-YYYYMMDD.png/jpg`. The date comes from the capture date, then the file modification date, then the current day.
 - Use a responsive layout on desktop and mobile.
 
-**Not yet implemented:** cropping.
+**Not yet implemented:** cropping. The Zoom gauge is decorative and does not change image magnification.
 
 ## Run locally
 
