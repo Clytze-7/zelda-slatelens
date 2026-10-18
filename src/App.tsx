@@ -4,6 +4,7 @@ import { Stage, Layer, Image as KonvaImage, Line, Group, Rect, Text } from 'reac
 import type Konva from 'konva'
 import './App.css'
 import { colors } from './theme'
+import { readCaptureDate, resolveImageDate } from './photoDate'
 
 const SETTINGS_PAGES = ['Basic']
 
@@ -19,12 +20,14 @@ function App() {
   const [targetPosition, setTargetPosition] = useState({ x: 0.5, y: 0.5 })
   const [boxPercent, setBoxPercent] = useState(28)
   const [fileName, setFileName] = useState('')
+  const [imageDate, setImageDate] = useState<string | null>(null)
   const [targetName, setTargetName] = useState('Unknown')
   const [compressedExport, setCompressedExport] = useState(false)
   const [settingsPage, setSettingsPage] = useState(0)
 
   const stageRef = useRef<Konva.Stage>(null)
   const nameRef = useRef<Konva.Text>(null)
+  const uploadRequestRef = useRef(0)
 
 
   // 容器宽度变化时更新画布；取整可避免小数像素触发反复重绘。
@@ -98,18 +101,28 @@ function App() {
   )
   // 外侧固定框始终为希卡蓝，只有追踪框和名称随记录状态变色。
   const trackingColor = recorded ? colors.sheikah : colors.orange
+  // 预览与下载共用同一个文件名，避免名称、日期或格式不一致。
+  const exportName = (targetName.trim() || 'Unknown').replace(/[\\/:*?"<>|]/g, '_')
+  const exportFileName = `${exportName}-${imageDate ?? 'PhotoDate'}.${compressedExport ? 'jpg' : 'png'}`
 
   // 在本地读取文件，等图片解码完成后再交给 Konva 绘制。
   function handleUpload(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
     if (!file) return
 
+    const requestId = ++uploadRequestRef.current
+    const captureDate = readCaptureDate(file).catch(() => null)
     const reader = new FileReader()
     reader.onload = () => {
       const img = new window.Image()
-      img.onload = () => {
+      img.onload = async () => {
+        const date = await captureDate
+        if (requestId !== uploadRequestRef.current) return
         setImage(img)
         setFileName(file.name)
+        setImageDate(resolveImageDate(date, file.lastModified))
+        // 新图片载入时按格式设置导出默认值；之后仍可手动切换。
+        setCompressedExport(file.type === 'image/jpeg' || /\.jpe?g$/i.test(file.name))
       }
       img.src = reader.result as string
     }
@@ -127,7 +140,6 @@ function App() {
     const pixelRatio = (image.naturalWidth / canvasWidth) * outputScale
     const canvas = stageRef.current.toCanvas({ pixelRatio })
     const mimeType = compressedExport ? 'image/jpeg' : 'image/png'
-    const extension = compressedExport ? 'jpg' : 'png'
 
     canvas.toBlob((blob) => {
       if (!blob) {
@@ -137,11 +149,8 @@ function App() {
 
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
-      const exportName = (targetName.trim() || 'Unknown').replace(/[\\/:*?"<>|]/g, '_')
-      const today = new Date()
-      const date = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}`
       link.href = url
-      link.download = `${exportName}-${date}.${extension}`
+      link.download = exportFileName
       document.body.appendChild(link)
       link.click()
       link.remove()
@@ -270,6 +279,7 @@ function App() {
           <Button size="small" variant="sheikah" block disabled={!image} onClick={handleExport}>
             {compressedExport ? 'Export JPG' : 'Export PNG'}
           </Button>
+          <small className="control-hint file-name">Export filename: {exportFileName}</small>
         </div>
       </section>
 
