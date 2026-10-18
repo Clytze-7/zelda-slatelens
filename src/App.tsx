@@ -24,6 +24,7 @@ function App() {
   const [settingsPage, setSettingsPage] = useState(0)
 
   const stageRef = useRef<Konva.Stage>(null)
+  const nameRef = useRef<Konva.Text>(null)
 
 
   // 容器宽度变化时更新画布；取整可避免小数像素触发反复重绘。
@@ -61,31 +62,41 @@ function App() {
 
   // 滑块值表示追踪框占图片短边的百分比。
   const boxSize = shortEdge * boxPercent / 100
+  const trackingArm = boxSize * 0.18 // 追踪框每个角的线长
 
   // 装饰尺寸随预览画布缩放，导出到原图尺寸后保持相同的视觉比例。
   // 以画布短边 600px 时的原有尺寸作为基准。
   const overlayScale = shortEdge / 600
   const lineWidth = 2 * overlayScale
-  const labelBorderWidth = overlayScale
+  // Zoom 标尺与固定框共用左边线；长度跟随短边缩放并保持垂直居中。
+  const zoomHeight = shortEdge * 0.28
+  const zoomTop = (canvasHeight - zoomHeight) / 2
+  const zoomCap = 5 * overlayScale
 
-  // 提示条最小宽度随画布缩放，但不能超过画布；追踪框和提示条共用中心点。
+  // 名称区域的最小宽度随画布缩放，但不能超过画布；它与追踪框共用中心点。
   const labelWidth = Math.min(canvasWidth, Math.max(boxSize, 140 * overlayScale))
   const labelHeight = 26 * overlayScale
-  const labelGap = 6 * overlayScale
   const labelFontSize = 14 * overlayScale
   const horizontalHalf = Math.max(boxSize, labelWidth) / 2
 
-  // 将比例坐标换算成画布像素，并限制在可见区域内。
-  // 横向按较宽的元素计算；纵向额外给追踪框上方的提示条留空间。
+  // 名称默认与上边缘居中；贴近顶部时改与下边缘居中，避免被画布裁切。
+  function nameOffsetY(centerY: number) {
+    const atTop = centerY - boxSize / 2 < labelHeight / 2
+    return atTop
+      ? boxSize / 2 - labelHeight / 2
+      : -boxSize / 2 - labelHeight / 2
+  }
+
+  // 将比例坐标换算成画布像素，并限制追踪框本身在可见区域内。
   const targetX = Math.max(
     horizontalHalf,
     Math.min(canvasWidth - horizontalHalf, targetPosition.x * canvasWidth),
   )
   const targetY = Math.max(
-    boxSize / 2 + labelHeight + labelGap,
+    boxSize / 2,
     Math.min(canvasHeight - boxSize /2, targetPosition.y * canvasHeight),
   )
-  // 外侧固定框始终为希卡蓝，只有追踪框和提示条随记录状态变色。
+  // 外侧固定框始终为希卡蓝，只有追踪框和名称随记录状态变色。
   const trackingColor = recorded ? colors.sheikah : colors.orange
 
   // 在本地读取文件，等图片解码完成后再交给 Konva 绘制。
@@ -266,13 +277,40 @@ function App() {
         { image && canvasWidth > 0 ? (
           <Stage ref={stageRef} width={canvasWidth} height={canvasHeight}>
             <Layer>
-              {/* 图层顺序：原图 → 固定取景框 → 可拖动追踪框与名称提示。 */}
+              {/* 图层顺序：原图 → 固定取景框 → 可拖动追踪框与名称。 */}
               <KonvaImage image={image} width={canvasWidth} height={canvasHeight} />
-              <Line points={[inset + arm, inset, inset, inset, inset, inset + arm]} stroke={colors.sheikah} strokeWidth={lineWidth} />
-              <Line points={[canvasWidth - inset - arm, inset, canvasWidth - inset, inset, canvasWidth - inset, inset + arm]} stroke={colors.sheikah} strokeWidth={lineWidth} />
-              <Line points={[inset + arm, canvasHeight - inset, inset, canvasHeight - inset, inset, canvasHeight - inset - arm]} stroke={colors.sheikah} strokeWidth={lineWidth} />
-              <Line points={[canvasWidth - inset - arm, canvasHeight - inset, canvasWidth - inset, canvasHeight - inset, canvasWidth - inset, canvasHeight - inset - arm]} stroke={colors.sheikah} strokeWidth={lineWidth} />
-              {/* Group 内的元素一起拖动；边界同时考虑追踪框和上方提示条。 */}
+              <Group opacity={0.45} listening={false}>
+                <Line points={[inset + arm, inset, inset, inset, inset, inset + arm]} stroke={colors.sheikah} strokeWidth={lineWidth} />
+                <Line points={[canvasWidth - inset - arm, inset, canvasWidth - inset, inset, canvasWidth - inset, inset + arm]} stroke={colors.sheikah} strokeWidth={lineWidth} />
+                <Line points={[inset + arm, canvasHeight - inset, inset, canvasHeight - inset, inset, canvasHeight - inset - arm]} stroke={colors.sheikah} strokeWidth={lineWidth} />
+                <Line points={[canvasWidth - inset - arm, canvasHeight - inset, canvasWidth - inset, canvasHeight - inset, canvasWidth - inset, canvasHeight - inset - arm]} stroke={colors.sheikah} strokeWidth={lineWidth} />
+              </Group>
+              {/* Zoom 标尺比四角更清晰，暂时只作装饰，不改变图片缩放。 */}
+              <Group opacity={0.8} listening={false}>
+                <Text
+                  x={inset - 26 * overlayScale}
+                  y={zoomTop - 22 * overlayScale}
+                  width={52 * overlayScale}
+                  text="Zoom"
+                  align="center"
+                  fontSize={14 * overlayScale}
+                  fontStyle="bold"
+                  fill={colors.sheikah}
+                />
+                <Line points={[inset, zoomTop, inset, zoomTop + zoomHeight]} stroke={colors.sheikah} strokeWidth={1.5 * overlayScale} />
+                <Line points={[inset - zoomCap, zoomTop, inset + zoomCap, zoomTop]} stroke={colors.sheikah} strokeWidth={1.5 * overlayScale} />
+                <Line points={[inset - zoomCap, zoomTop + zoomHeight, inset + zoomCap, zoomTop + zoomHeight]} stroke={colors.sheikah} strokeWidth={1.5 * overlayScale} />
+                <Line
+                  points={[
+                    inset - 12 * overlayScale, zoomTop + zoomHeight * 0.18 - 5 * overlayScale,
+                    inset - 5 * overlayScale, zoomTop + zoomHeight * 0.18,
+                    inset - 12 * overlayScale, zoomTop + zoomHeight * 0.18 + 5 * overlayScale,
+                  ]}
+                  closed
+                  fill={colors.sheikah}
+                />
+              </Group>
+              {/* Group 内的元素一起拖动；名称在贴近顶部时切到下边缘。 */}
               <Group
                 x={targetX}
                 y={targetY}
@@ -283,10 +321,13 @@ function App() {
                     Math.min(canvasWidth - horizontalHalf, point.x),
                   ),
                   y: Math.max(
-                    boxSize / 2 + labelHeight + labelGap,
+                    boxSize / 2,
                     Math.min(canvasHeight - boxSize / 2, point.y),
                   ),
                 })}
+                onDragMove={(event) => {
+                  nameRef.current?.y(nameOffsetY(event.target.y()))
+                }}
                 onDragEnd={(event) => {
                   // 拖动结束时重新保存为 0～1 的相对坐标。
                   setTargetPosition({
@@ -295,19 +336,19 @@ function App() {
                   })
                 }}
               >
-                {/* 提示条与追踪框使用同一状态颜色。 */}
+                {/* 透明命中区域保留框内拖动能力，不会出现在导出图片中。 */}
                 <Rect
-                  x={-labelWidth / 2}
-                  y={-boxSize / 2 - labelHeight - labelGap}
-                  width={labelWidth}
-                  height={labelHeight}
-                  fill="rgba(10, 20, 40, 0.75)"
-                  stroke={trackingColor}
-                  strokeWidth={labelBorderWidth}
+                  x={-boxSize / 2}
+                  y={-boxSize / 2}
+                  width={boxSize}
+                  height={boxSize}
+                  fill="transparent"
                 />
+                {/* 名称与当前边缘居中，颜色与追踪框一致。 */}
                 <Text
+                  ref={nameRef}
                   x={-labelWidth / 2}
-                  y={-boxSize / 2 - labelHeight - labelGap}
+                  y={nameOffsetY(targetY)}
                   width={labelWidth}
                   height={labelHeight}
                   text={targetName.trim() || 'Unknown'}
@@ -318,15 +359,11 @@ function App() {
                   ellipsis
                   wrap="none"
                 />
-                <Rect
-                  x={-boxSize / 2}
-                  y={-boxSize / 2}
-                  width={boxSize}
-                  height={boxSize}
-                  stroke={trackingColor}
-                  strokeWidth={lineWidth}
-                  fill="rgba(0, 0, 0, 0.08)"
-                />
+                {/* 只绘制方框四角，保留原来的框尺寸与拖动边界。 */}
+                <Line points={[-boxSize / 2 + trackingArm, -boxSize / 2, -boxSize / 2, -boxSize / 2, -boxSize / 2, -boxSize / 2 + trackingArm]} stroke={trackingColor} strokeWidth={lineWidth} listening={false} />
+                <Line points={[boxSize / 2 - trackingArm, -boxSize / 2, boxSize / 2, -boxSize / 2, boxSize / 2, -boxSize / 2 + trackingArm]} stroke={trackingColor} strokeWidth={lineWidth} listening={false} />
+                <Line points={[-boxSize / 2 + trackingArm, boxSize / 2, -boxSize / 2, boxSize / 2, -boxSize / 2, boxSize / 2 - trackingArm]} stroke={trackingColor} strokeWidth={lineWidth} listening={false} />
+                <Line points={[boxSize / 2 - trackingArm, boxSize / 2, boxSize / 2, boxSize / 2, boxSize / 2, boxSize / 2 - trackingArm]} stroke={trackingColor} strokeWidth={lineWidth} listening={false} />
               </Group>
             </Layer>
           </Stage>
