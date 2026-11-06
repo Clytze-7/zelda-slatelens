@@ -47,7 +47,7 @@
   background: rgb(25 42 48 / 68%);
 }
 
-.preview-zoom { position: absolute; top: 6px; right: 6px; z-index: 1; color: #3cd3fc; font-variant-numeric: tabular-nums; pointer-events: none; }
+.preview-zoom { position: absolute; top: 6px; right: 6px; z-index: 1; color: var(--color-sheikah); font-variant-numeric: tabular-nums; pointer-events: none; }
 .preview-viewport .preview-mode-choice {
   position: absolute;
   left: 6px;
@@ -87,7 +87,7 @@
 .zoom-input::-webkit-slider-thumb { appearance: none; width: 36px; height: 24px; border: 0; background: transparent; }
 .zoom-input::-moz-range-track { background: transparent; border: 0; }
 .zoom-input::-moz-range-thumb { width: 36px; height: 24px; border: 0; background: transparent; }
-.zoom-input:focus-visible { outline: 1px solid #3cd3fc; outline-offset: 2px; border-radius: 3px; }
+.zoom-input:focus-visible { outline: 1px solid var(--color-sheikah); outline-offset: 2px; border-radius: 3px; }
 
 .status-buttons {
   display: flex;
@@ -109,22 +109,22 @@
 }
 
 .status-buttons .status-unrecorded-active {
-  color: #FFAB2A;
-  background: #FFAB2A20;
+  color: var(--color-orange);
+  background: color-mix(in srgb, var(--color-orange) 12.55%, transparent);
 }
 
 .status-buttons .status-unrecorded-active::after {
-  border-color: #FFAB2A;
+  border-color: var(--color-orange);
 }
 
 .status-buttons .status-recorded-active {
-  color: #3cd3fc;
-  background: #3cd3fc20;
+  color: var(--color-sheikah);
+  background: color-mix(in srgb, var(--color-sheikah) 12.55%, transparent);
 }
 
 .control-label,
 .name-control label {
-  color: #e2ded3;
+  color: var(--color-ivory);
   font-size: 14px;
 }
 
@@ -136,7 +136,7 @@
 .control-hint {
   display: block;
   margin-top: 8px;
-  color: #e2ded399;
+  color: color-mix(in srgb, var(--color-ivory) 60.00%, transparent);
 }
 
 .file-name {
@@ -151,14 +151,14 @@
 .name-control input {
   width: 100%;
   padding: 10px 12px;
-  color: #e2ded3;
+  color: var(--color-ivory);
   background: #0a1428;
-  border: 1px solid #3cd3fc66;
+  border: 1px solid color-mix(in srgb, var(--color-sheikah) 40.00%, transparent);
   border-radius: 2px;
 }
 
 .name-control input:focus-visible {
-  outline: 2px solid #3cd3fc;
+  outline: 2px solid var(--color-sheikah);
   outline-offset: 2px;
 }
 
@@ -207,7 +207,7 @@
   display: grid;
   justify-items: center;
   gap: 5px;
-  color: #e2ded3;
+  color: var(--color-ivory);
   font-size: 12px;
 }
 
@@ -228,7 +228,7 @@
   display: block;
   margin-bottom: 10px;
   padding: 0;
-  color: #e2ded3;
+  color: var(--color-ivory);
   font-size: 14px;
   font-style: normal;
   font-weight: 400;
