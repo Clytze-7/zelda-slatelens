@@ -37,14 +37,57 @@
 }
 
 .preview {
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   min-width: 0;
   min-height: 0;
   overflow: hidden;
   /* 画布外保留更多背景纹理，图片本身仍保持原样。 */
   background: rgb(25 42 48 / 68%);
 }
+
+.preview-zoom { position: absolute; top: 6px; right: 6px; z-index: 1; color: #3cd3fc; font-variant-numeric: tabular-nums; pointer-events: none; }
+.preview-viewport .preview-mode-choice {
+  position: absolute;
+  left: 6px;
+  bottom: 6px;
+  z-index: 2;
+  gap: 6px;
+  width: min(160px, 45%);
+}
+.preview-mode-choice > button {
+  justify-content: center;
+  height: 36px;
+  min-width: 0;
+  padding: 5px 8px 5px 16px;
+}
+.preview-mode-choice > button > span { font-size: 12px; }
+.preview-mode-choice > button > span:first-child:not(:last-child) { left: 7px; font-size: 8px; }
+.preview-viewport { position: relative; container-type: size; display: flex; align-items: center; justify-content: center; flex: 1; min-width: 0; min-height: 0; }
+.canvas-shell { position: relative; flex: none; }
+.photo-gestures { position: absolute; inset: 0; cursor: grab; touch-action: none; user-select: none; }
+.photo-gestures:active { cursor: grabbing; }
+
+/* 交互层使用透明控件，标尺和指示点仍由 Konva 绘制并参与导出。 */
+.zoom-input {
+  position: absolute;
+  width: 36px;
+  padding: 0;
+  margin: 0;
+  appearance: none;
+  writing-mode: vertical-lr;
+  direction: rtl;
+  background: transparent;
+  border: 0;
+  cursor: ns-resize;
+  touch-action: none;
+}
+.zoom-input::-webkit-slider-runnable-track { background: transparent; }
+.zoom-input::-webkit-slider-thumb { appearance: none; width: 36px; height: 24px; border: 0; background: transparent; }
+.zoom-input::-moz-range-track { background: transparent; border: 0; }
+.zoom-input::-moz-range-thumb { width: 36px; height: 24px; border: 0; background: transparent; }
+.zoom-input:focus-visible { outline: 1px solid #3cd3fc; outline-offset: 2px; border-radius: 3px; }
 
 .status-buttons {
   display: flex;
@@ -80,8 +123,7 @@
 }
 
 .control-label,
-.name-control label,
-.size-control label {
+.name-control label {
   color: #e2ded3;
   font-size: 14px;
 }
@@ -120,55 +162,6 @@
   outline-offset: 2px;
 }
 
-.size-control label {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 14px;
-}
-
-.size-control label strong {
-  color: #3cd3fc;
-}
-
-.size-control input[type="range"] {
-  appearance: none;
-  width: 100%;
-  height: 6px;
-  margin: 8px 0;
-  border: 1px solid #3cd3fc66;
-  border-radius: 0;
-  background: #0a1428;
-  cursor: pointer;
-}
-
-.size-control input[type="range"]::-webkit-slider-thumb {
-  appearance: none;
-  width: 18px;
-  height: 24px;
-  border: 2px solid #e2ded3;
-  border-radius: 2px;
-  background: #3cd3fc;
-}
-
-.size-control input[type="range"]::-moz-range-thumb {
-  width: 18px;
-  height: 24px;
-  border: 2px solid #e2ded3;
-  border-radius: 2px;
-  background: #3cd3fc;
-}
-
-.size-control input[type="range"]:focus-visible {
-  outline: 2px solid #3cd3fc;
-  outline-offset: 4px;
-}
-
-.size-control input[type="range"]:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
 @media (max-width: 720px) {
   .editor {
     display: flex;
@@ -189,9 +182,11 @@
   }
 
   .preview {
-    height: min(65dvh, 520px);
+    padding: 12px;
     min-height: 300px;
   }
+
+  .preview-viewport { flex: none; height: min(55dvh, 480px); min-height: 220px; }
 }
 
 .settings-pager {

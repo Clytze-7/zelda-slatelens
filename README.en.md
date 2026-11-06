@@ -18,11 +18,13 @@ Click the preview to view the full-size example.
 
 - Choose, preview, and edit local images in the browser without uploading them to a server.
 - The fixed viewfinder stays Sheikah blue. Drag or resize the single tracking frame and customize its target name; the frame is blue when recorded and orange when unrecorded.
+- Adjust pictures with 1–3× zoom while keeping the original aspect ratio.
+- In either editing mode, use arrow keys to move and ABXY to enlarge, shrink, confirm, or cancel.
 - Export a PNG at the original image dimensions, or a compressed JPG with a maximum long edge of 2560 pixels. JPG uploads enable compressed export by default, and you can change the setting.
 - Export filenames use `Target Name-YYYYMMDD.png/jpg`. The date comes from the capture date, then the file modification date, then the current day.
 - Use a responsive layout on desktop and mobile.
 
-**Not yet implemented:** cropping. The Zoom gauge is decorative and does not change image magnification.
+**Not yet implemented:** custom crop ratios or adjustable crop areas.
 
 ## Run locally
 

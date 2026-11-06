@@ -1,0 +1,135 @@
+.camera-console {
+  --key-size: clamp(22px, 9cqmin, 44px);
+  /* 右侧留出完整的 Confirm 提示宽度。 */
+  --confirm-width: calc(var(--key-size) * 2.45);
+  position: absolute;
+  inset: auto calc(var(--confirm-width) + 6px) calc(var(--key-size) * 0.40 + 6px) auto;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* 十字键和 ABXY 之间为 X 向上的提示条留空。 */
+  gap: calc(var(--key-size) * 0.40 + 6px);
+  color: #e2ded3;
+  pointer-events: none;
+}
+
+.camera-dpad,
+.camera-abxy {
+  display: grid;
+  grid-template: repeat(3, var(--key-size)) / repeat(3, var(--key-size));
+  position: relative;
+}
+
+.camera-key {
+  display: grid;
+  place-items: center;
+  position: relative;
+  width: var(--key-size);
+  height: var(--key-size);
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  pointer-events: auto;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  transition: background 100ms, box-shadow 100ms, transform 100ms;
+}
+
+.camera-key > * { pointer-events: none; }
+.camera-key[aria-disabled='true'] { opacity: 0.4; cursor: default; }
+.camera-letter { border-radius: 50%; }
+
+
+.camera-console .camera-key:focus-visible { outline: none; }
+
+.dpad-base {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  fill: #e2ded3;
+  pointer-events: none;
+}
+
+.camera-dpad .camera-key {
+  border: 0;
+  border-radius: 12%;
+}
+
+.camera-dpad .camera-key[aria-disabled='true'] { opacity: 1; }
+
+.dpad-mark {
+  width: 74%;
+  height: 74%;
+  border-radius: 13%;
+  background: #262521;
+  visibility: hidden;
+}
+
+.camera-dpad .camera-key:hover .dpad-mark,
+.camera-dpad:not(:has(.camera-key:hover)) .camera-key:is(.is-pressed, :focus-visible) .dpad-mark { visibility: visible; }
+
+.dpad-up, .key-x { grid-area: 1 / 2; }
+.dpad-left, .key-y { grid-area: 2 / 1; }
+.dpad-right, .key-a { grid-area: 2 / 3; }
+.dpad-down, .key-b { grid-area: 3 / 2; }
+
+/* 左右两组外框都为键径的 2.12 倍。 */
+.camera-dpad {
+  --direction-size: calc(var(--key-size) * 2.12 / 3);
+  grid-template: repeat(3, var(--direction-size)) / repeat(3, var(--direction-size));
+}
+
+.camera-dpad .camera-key {
+  width: var(--direction-size);
+  height: var(--direction-size);
+}
+
+.camera-abxy {
+  --key-spacing: calc(var(--key-size) * 0.56);
+  grid-template: repeat(3, var(--key-spacing)) / repeat(3, var(--key-spacing));
+  place-items: center;
+  padding: calc((var(--key-size) - var(--key-spacing)) / 2);
+}
+
+.camera-abxy .camera-letter {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+}
+
+.camera-button-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  font-family: Arial, sans-serif;
+}
+
+.camera-art-state { display: none; }
+.camera-abxy:has(.camera-letter:is(:hover, :focus-visible, .is-pressed)) .camera-art-idle { display: none; }
+
+.camera-abxy:has(.key-x:hover) .camera-art-x,
+.camera-abxy:not(:has(.camera-letter:is(:hover, .is-pressed))):has(.key-x:focus-visible) .camera-art-x { display: inline; }
+.camera-abxy:has(.key-y:hover) .camera-art-y,
+.camera-abxy:not(:has(.camera-letter:is(:hover, .is-pressed))):has(.key-y:focus-visible) .camera-art-y { display: inline; }
+.camera-abxy:has(.key-a:hover) .camera-art-a,
+.camera-abxy:not(:has(.camera-letter:is(:hover, .is-pressed))):has(.key-a:focus-visible) .camera-art-a { display: inline; }
+.camera-abxy:has(.key-b:hover) .camera-art-b,
+.camera-abxy:not(:has(.camera-letter:is(:hover, .is-pressed))):has(.key-b:focus-visible) .camera-art-b { display: inline; }
+
+.camera-abxy:not(:has(.camera-letter:hover)):has(.key-x.is-pressed) .camera-art-x,
+.camera-abxy:not(:has(.camera-letter:hover, .key-x.is-pressed)):has(.key-y.is-pressed) .camera-art-y { display: inline; }
+
+@media (prefers-reduced-motion: reduce) {
+  .camera-key { transition: none; }
+}
